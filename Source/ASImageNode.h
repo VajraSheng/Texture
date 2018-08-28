@@ -173,7 +173,6 @@ typedef UIImage * _Nullable (^asimagenode_modification_block_t)(UIImage *image);
  *
  * @discussion This method is for subclasses to override so they can know if an animated image
  * has been set on the node.
- * @warning this method is called with the node's lock held.
  */
 - (void)animatedImageSet:(id <ASAnimatedImageProtocol>)newAnimatedImage previousAnimatedImage:(id <ASAnimatedImageProtocol>)previousAnimatedImage;
 

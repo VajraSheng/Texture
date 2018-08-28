@@ -53,6 +53,7 @@ NSString *const ASAnimatedImageDefaultRunLoopMode = NSRunLoopCommonModes;
   
   _animatedImage = animatedImage;
   
+  BOOL shouldCleanup = NO;
   if (animatedImage != nil) {
     __weak ASImageNode *weakSelf = self;
     if ([animatedImage respondsToSelector:@selector(setCoverImageReadyCallback:)]) {
@@ -70,13 +71,20 @@ NSString *const ASAnimatedImageDefaultRunLoopMode = NSRunLoopCommonModes;
       [self _locked_setShouldAnimate:YES];
     }
   } else {
-      // Clean up after ourselves.
-      self.contents = nil;
-      [self setCoverImage:nil];
+    // Clean up after ourselves.
+    shouldCleanup = YES;
   }
   
-  [self animatedImageSet:_animatedImage previousAnimatedImage:previousAnimatedImage];
+  {
+    // Unlock for cleanup and calling subclass hook
+    ASUnlockScope(self);
     
+    self.contents = nil;
+    [self setCoverImage:nil];
+    
+    [self animatedImageSet:_animatedImage previousAnimatedImage:previousAnimatedImage];
+  }
+  
   // Animated image can take while to dealloc, do it off the main queue
   if (previousAnimatedImage != nil) {
     ASPerformBackgroundDeallocation(&previousAnimatedImage);
