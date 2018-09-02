@@ -44,7 +44,7 @@ NSString *const ASAnimatedImageDefaultRunLoopMode = NSRunLoopCommonModes;
 - (void)_locked_setAnimatedImage:(id <ASAnimatedImageProtocol>)animatedImage
 {
   ASAssertLocked(__instanceLock__);
-  
+
   if (ASObjectIsEqual(_animatedImage, animatedImage) && (animatedImage == nil || animatedImage.playbackReady)) {
     return;
   }
@@ -53,7 +53,6 @@ NSString *const ASAnimatedImageDefaultRunLoopMode = NSRunLoopCommonModes;
   
   _animatedImage = animatedImage;
   
-  BOOL shouldCleanup = NO;
   if (animatedImage != nil) {
     __weak ASImageNode *weakSelf = self;
     if ([animatedImage respondsToSelector:@selector(setCoverImageReadyCallback:)]) {
@@ -72,28 +71,44 @@ NSString *const ASAnimatedImageDefaultRunLoopMode = NSRunLoopCommonModes;
     }
   } else {
     // Clean up after ourselves.
-    shouldCleanup = YES;
-  }
-  
-  {
-    // Unlock for cleanup and calling subclass hook
-    ASUnlockScope(self);
     
+    // Don't bother using a `_locked` version as it should be pretty safe calling it with reaquire the lock
     self.contents = nil;
-    [self setCoverImage:nil];
-    
-    [self animatedImageSet:_animatedImage previousAnimatedImage:previousAnimatedImage];
+    [self _locked_setCoverImage:nil];
   }
+
+  // Push calling subclass to the next runloop cycle
+  // We have to schedule the block on the common modes otherwise the tracking mode will not be included and it will
+  // not fire e.g. while scrolling down
+//  [self performSelector:@selector(_performAnimatedImageSetPreviousImageBlock:) withObject:^{
+//    [self animatedImageSet:animatedImage previousAnimatedImage:previousAnimatedImage];
+//  } afterDelay:0.0 inModes:@[NSRunLoopCommonModes]];
   
+  // Same as - [NSRunLoop performBlock:];
+//  let runLoop = CFRunLoopGetCurrent();
+  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), kCFRunLoopCommonModes, ^(void) {
+    [self animatedImageSet:animatedImage previousAnimatedImage:previousAnimatedImage];
+  });
+  // Don't need to wakeup the runloop as the current is already running
+// CFRunLoopWakeUp(runLoop); // Should not be necessary
+
   // Animated image can take while to dealloc, do it off the main queue
   if (previousAnimatedImage != nil) {
     ASPerformBackgroundDeallocation(&previousAnimatedImage);
   }
 }
 
+- (void)_performAnimatedImageSetPreviousImageBlock:(dispatch_block_t)block
+{
+  block();
+}
+
 - (void)animatedImageSet:(id <ASAnimatedImageProtocol>)newAnimatedImage previousAnimatedImage:(id <ASAnimatedImageProtocol>)previousAnimatedImage
 {
-  //Subclasses may override
+  // Subclass hook should not be called with the lock held
+  ASAssertUnlocked(__instanceLock__);
+  
+  // Subclasses may override
 }
 
 - (id <ASAnimatedImageProtocol>)animatedImage
