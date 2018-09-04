@@ -72,7 +72,8 @@ NSString *const ASAnimatedImageDefaultRunLoopMode = NSRunLoopCommonModes;
   } else {
     // Clean up after ourselves.
     
-    // Don't bother using a `_locked` version as it should be pretty safe calling it with reaquire the lock
+    // Don't bother using a `_locked` version for setting contnst as it should be pretty safe calling it with
+    // reaquire the lock and would add overhead to introduce this version
     self.contents = nil;
     [self _locked_setCoverImage:nil];
   }
@@ -80,12 +81,6 @@ NSString *const ASAnimatedImageDefaultRunLoopMode = NSRunLoopCommonModes;
   // Push calling subclass to the next runloop cycle
   // We have to schedule the block on the common modes otherwise the tracking mode will not be included and it will
   // not fire e.g. while scrolling down
-//  [self performSelector:@selector(_performAnimatedImageSetPreviousImageBlock:) withObject:^{
-//    [self animatedImageSet:animatedImage previousAnimatedImage:previousAnimatedImage];
-//  } afterDelay:0.0 inModes:@[NSRunLoopCommonModes]];
-  
-  // Same as - [NSRunLoop performBlock:];
-//  let runLoop = CFRunLoopGetCurrent();
   CFRunLoopPerformBlock(CFRunLoopGetCurrent(), kCFRunLoopCommonModes, ^(void) {
     [self animatedImageSet:animatedImage previousAnimatedImage:previousAnimatedImage];
   });
@@ -96,11 +91,6 @@ NSString *const ASAnimatedImageDefaultRunLoopMode = NSRunLoopCommonModes;
   if (previousAnimatedImage != nil) {
     ASPerformBackgroundDeallocation(&previousAnimatedImage);
   }
-}
-
-- (void)_performAnimatedImageSetPreviousImageBlock:(dispatch_block_t)block
-{
-  block();
 }
 
 - (void)animatedImageSet:(id <ASAnimatedImageProtocol>)newAnimatedImage previousAnimatedImage:(id <ASAnimatedImageProtocol>)previousAnimatedImage
