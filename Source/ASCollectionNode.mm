@@ -34,8 +34,8 @@
 @public
   std::vector<std::vector<ASRangeTuningParameters>> _tuningParameters;
 }
-@property (weak, nonatomic) id <ASCollectionDelegate>   delegate;
-@property (weak, nonatomic) id <ASCollectionDataSource> dataSource;
+@property (nonatomic, weak) id <ASCollectionDelegate>   delegate;
+@property (nonatomic, weak) id <ASCollectionDataSource> dataSource;
 @property (nonatomic) UICollectionViewLayout *collectionViewLayout;
 @property (nonatomic) ASLayoutRangeMode rangeMode;
 @property (nonatomic) BOOL allowsSelection; // default is YES
@@ -43,7 +43,7 @@
 @property (nonatomic) BOOL inverted; //default is NO
 @property (nonatomic) BOOL usesSynchronousDataLoading;
 @property (nonatomic) CGFloat leadingScreensForBatching;
-@property (weak, nonatomic) id <ASCollectionViewLayoutInspecting> layoutInspector;
+@property (nonatomic, weak) id <ASCollectionViewLayoutInspecting> layoutInspector;
 @property (nonatomic) BOOL alwaysBounceVertical;
 @property (nonatomic) BOOL alwaysBounceHorizontal;
 @property (nonatomic) UIEdgeInsets contentInset;
@@ -221,15 +221,15 @@
       for (NSInteger rangeType = 0; rangeType < tuningParametersVectorRangeModeSize; rangeType++) {
         ASRangeTuningParameters tuningParameters = tuningparametersRangeModeVector[rangeType];
         if (!ASRangeTuningParametersEqualToRangeTuningParameters(tuningParameters, ASRangeTuningParametersZero)) {
-          [view.rangeController setTuningParameters:tuningParameters
-                                       forRangeMode:(ASLayoutRangeMode)rangeMode
-                                          rangeType:(ASLayoutRangeType)rangeType];
+          [_rangeController setTuningParameters:tuningParameters
+                                   forRangeMode:(ASLayoutRangeMode)rangeMode
+                                      rangeType:(ASLayoutRangeType)rangeType];
         }
       }
     }
     
     if (pendingState.rangeMode != ASLayoutRangeModeUnspecified) {
-      [view.rangeController updateCurrentRangeWithMode:pendingState.rangeMode];
+      [_rangeController updateCurrentRangeWithMode:pendingState.rangeMode];
     }
     
     // Don't need to set collectionViewLayout to the view as the layout was already used to init the view in view block.
