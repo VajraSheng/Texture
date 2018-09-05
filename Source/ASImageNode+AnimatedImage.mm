@@ -49,7 +49,7 @@ NSString *const ASAnimatedImageDefaultRunLoopMode = NSRunLoopCommonModes;
     return;
   }
   
-  id <ASAnimatedImageProtocol> previousAnimatedImage = _animatedImage;
+  __block id <ASAnimatedImageProtocol> previousAnimatedImage = _animatedImage;
   
   _animatedImage = animatedImage;
   
@@ -83,14 +83,14 @@ NSString *const ASAnimatedImageDefaultRunLoopMode = NSRunLoopCommonModes;
   // not fire e.g. while scrolling down
   CFRunLoopPerformBlock(CFRunLoopGetCurrent(), kCFRunLoopCommonModes, ^(void) {
     [self animatedImageSet:animatedImage previousAnimatedImage:previousAnimatedImage];
+
+    // Animated image can take while to dealloc, do it off the main queue
+    if (previousAnimatedImage != nil) {
+      ASPerformBackgroundDeallocation(&previousAnimatedImage);
+    }
   });
   // Don't need to wakeup the runloop as the current is already running
-// CFRunLoopWakeUp(runLoop); // Should not be necessary
-
-  // Animated image can take while to dealloc, do it off the main queue
-  if (previousAnimatedImage != nil) {
-    ASPerformBackgroundDeallocation(&previousAnimatedImage);
-  }
+  // CFRunLoopWakeUp(runLoop); // Should not be necessary
 }
 
 - (void)animatedImageSet:(id <ASAnimatedImageProtocol>)newAnimatedImage previousAnimatedImage:(id <ASAnimatedImageProtocol>)previousAnimatedImage
